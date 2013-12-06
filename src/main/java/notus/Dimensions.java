@@ -18,6 +18,7 @@ package notus;
 
 public interface Dimensions {
 
+	int getDimensionCount();
 	int getIndex(String dim);
 	String getName(int dim);
 }
