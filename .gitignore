@@ -1,0 +1,38 @@
+#LateX
+*.toc
+*.aux
+*.lof
+*.lot
+*.lox
+*.bbl
+*.blg
+*.ind
+*.loa
+*.idx
+*.out
+*.spl
+*.rel
+*.nav
+*.snm
+*.fdb_latexmk
+
+# Emacs stuff
+_region_.tex
+auto/
+
+#Eclipse
+.project
+.classpath
+.settings
+target
+
+#OPL Stuff
+.project
+.oplproject
+
+# Random OS stuff
+.DS_Store
+Thumbs.db
+*.bak
+*.log
+*~
