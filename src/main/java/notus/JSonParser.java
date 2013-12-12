@@ -17,27 +17,22 @@
 package notus;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.PrintWriter;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonIOException;
-import com.google.gson.JsonSyntaxException;
-import com.google.gson.stream.JsonWriter;
-
-import parser.absconparseur.tools.UnsupportedConstraintException;
 import parser.instances.InstanceFileParser;
 
 public class JSonParser implements InstanceFileParser {
 
+	class Instance {
+	   ItemObject[] items = null;
+	   BinObject[]  bins = null;
+	   DescriptionSizes descrDims = null;
+	}
+	
 	File file = null;
-	public static Gson gson = new Gson();
+	//public static Gson gson = new Gson();
 	Instance instance = null;
 	
 	public static final String ITEMS_KEY = "items";
@@ -50,7 +45,6 @@ public class JSonParser implements InstanceFileParser {
 	
 	public JSonParser() {}
 
-	
 	@Override
 	public File getInstanceFile() {
 		return file;
@@ -65,7 +59,7 @@ public class JSonParser implements InstanceFileParser {
 	}
 
 	public Dimensions getDimensions() {
-		return null;
+		return instance.descrDims;
 	}
 
 	@Override
@@ -86,55 +80,81 @@ public class JSonParser implements InstanceFileParser {
 			
 			instance = new Instance();
 			
-			List<Map> mapItems = (List<Map>) mapInstance.get(ITEMS_KEY);
-			List<Map> mapBins = (List<Map>) mapInstance.get(BINS_KEY);
+			List<Map<String, Object>> mapItems = (List<Map<String, Object>>) mapInstance.get(ITEMS_KEY);
+			List<Map<String, Object>> mapBins = (List<Map<String, Object>>) mapInstance.get(BINS_KEY);
 			
-			instance.items = new ItemJSON[mapItems.size()];
-			instance.bins = new BinJSON[mapBins.size()];
+			instance.items = new ItemObject[mapItems.size()];
+			instance.bins = new BinObject[mapBins.size()];
 			
-			System.out.println("Get " + ITEMS_KEY);					
+			boolean descrDone = false;
+			instance.descrDims = new DescriptionSizes();
+			
+			//System.out.println("Get " + ITEMS_KEY);					
 			for(int i = 0; i < instance.items.length; i++) {
-				 ItemJSON item = new ItemJSON();
-				 Map mapItem = mapItems.get(i);
+				 ItemObject item = new ItemObject();
+				 Map<String, Object> mapItem = (Map<String, Object>) mapItems.get(i);
 
 				 item.name = (String) mapItem.get(NAME_KEY);
-				 item.arity = (Long) mapItem.get(ARITY_KEY);
-				 List<Map> mapSizes = (List<Map>) mapItem.get(SIZES_KEY);
+				 item.arity = ((Long) mapItem.get(ARITY_KEY)).intValue();
+				 List<Map<String, Object> > mapSizes = (List<Map<String, Object> >) mapItem.get(SIZES_KEY);
 				 
-				 item.sizes = new Size[mapSizes.size()];
+				 item.sizes = new int[mapSizes.size()];
+				 
+				 if(instance.descrDims.dims == null) {
+					 instance.descrDims.dims = new String[item.sizes.length];
+				 }
 				 
 				 for(int j = 0; j < item.sizes.length; j++) {
-					 Size size = new Size();
-					 size.dims.putAll((Map<String, Integer>) mapSizes.get(j));
-					 item.sizes[j] = size;
+					 
+					 String key = (String) mapSizes.get(j).keySet().iterator().next();
+					 if(!descrDone) {
+						 for(int k = 0; k < j; k++) {
+							if(key.equals(instance.descrDims.dims[k])) {
+								throw new Exception("Problem : 2 dimensions have the same name");
+							}				
+						 }
+						 instance.descrDims.dims[j] = key;
+					 }
+					 item.sizes[j] = ((Long) mapSizes.get(j).get(key)).intValue();
 					 //System.out.println(size.dims);
 				 }
 				 
+				 descrDone = true;
 				 instance.items[i] = item;
 			}
 			
-			System.out.println("Get " + BINS_KEY);					
+			//System.out.println("Get " + BINS_KEY);					
 			for(int i = 0; i < instance.bins.length; i++) {
-				 BinJSON bin = new BinJSON();
-				 Map mapBin = mapBins.get(i);
+				 BinObject bin = new BinObject();
+				 Map<String, Object> mapBin = (Map<String, Object>) mapBins.get(i);
 
 				 bin.name = (String) mapBin.get(NAME_KEY);
-				 bin.arity = (Long) mapBin.get(ARITY_KEY);
-				 bin.cost = (Long) mapBin.get(COST_KEY);
+				 bin.arity = ((Long) mapBin.get(ARITY_KEY)).intValue();
+				 bin.cost = ((Long) mapBin.get(COST_KEY)).intValue();
 				 
-				 List<Map> mapSizes = (List<Map>) mapBin.get(SIZES_KEY);
+				 List<Map<String, Object> > mapSizes = (List<Map<String, Object> >) mapBin.get(SIZES_KEY);
 				 
-				 bin.sizes = new Size[mapSizes.size()];
+				 bin.sizes = new int[mapSizes.size()];
 				 
 				 for(int j = 0; j < bin.sizes.length; j++) {
-					 Size size = new Size();
-					 size.dims.putAll((Map<String, Integer>) mapSizes.get(j));
-					 bin.sizes[j] = size;
+					 
+					 String key = (String) mapSizes.get(j).keySet().iterator().next();
+					 bin.sizes[j] = ((Long) mapSizes.get(j).get(key)).intValue();
 					 //System.out.println(size.dims);
 				 }
 				 
 				 instance.bins[i] = bin;
 			}
+			
+			System.out.println("Print Description Dimensions");					
+			System.out.println(instance.descrDims);
+			
+			System.out.println("Print " + ITEMS_KEY);					
+			System.out.println(Arrays.asList(instance.items));
+
+			System.out.println("Print " + BINS_KEY);					
+			//System.out.println(Arrays.asList(instance.bins));
+			
 			
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -145,23 +165,16 @@ public class JSonParser implements InstanceFileParser {
 	@Override
 	public void cleanup() {
 		file = null;	
-		instance = null;	
-	}
-	
-	
-	class Instance {
-	   ItemJSON[] items;
-	   BinJSON[]  bins;
+		instance = null; 
 	}
 
-	
-	class ItemJSON implements Item {
+	class ItemObject implements Item {
 		
 		//{ "name": "MySQL-LB", "consume": [ {"ram", 128} ], "arity": 2 },
 	    
-		String name;
-		Size[] sizes;
-		long arity;
+		String name = null;
+		int[] sizes = null;
+		int arity = -1;
 		
 		@Override
 		public String getName() {
@@ -170,16 +183,23 @@ public class JSonParser implements InstanceFileParser {
 
 		@Override
 		public int getSize(int dim) {
-			return sizes[dim].getDimensionCount();
+			return sizes[dim];
 		}
 		
 		@Override
 		public int getArity() {
-			return (int) arity;
+			return arity;
+		}
+		
+		@Override
+		public String toString() {
+			return  "name : " + name + "\n"
+					+ "sizes : " + Arrays.toString(sizes) + "\n"
+					+ "arity : " + arity + "\n";
 		}
 	}
 
-	class BinJSON implements Bin {
+	class BinObject implements Bin {
 		 /*
 		{
 		      "name": "Location_category_1",
@@ -188,10 +208,10 @@ public class JSonParser implements InstanceFileParser {
 		      "arity": 6
 		    }
 		    */
-		String name;
-		Size[] sizes;
-		long cost;
-		long arity;
+		String name = null;
+		int[] sizes = null;
+		int cost = -1;
+		int arity = -1;
 
 		@Override
 		public String getName() {
@@ -199,40 +219,56 @@ public class JSonParser implements InstanceFileParser {
 		}
 		@Override
 		public int getSize(int dim) {
-			return sizes[dim].getDimensionCount();
+			return sizes[dim];
 		}
 		@Override
 		public int getArity() {
-			return (int) arity;
+			return arity;
 		}
 		@Override
 		public int getCost() {
-			// TODO Auto-generated method stub
-			return (int) cost;
-		}	
+			return cost;
+		}
+		
+		@Override
+		public String toString() {
+			return  "name : " + name + "\n"
+					+ "sizes : " + Arrays.toString(sizes) + "\n"
+					+ "arity : " + arity + "\n"
+					+ "cost : " + cost + "\n";
+		}
 	}
 	
-	class Size implements Dimensions {
+	class DescriptionSizes implements Dimensions {
 		
-		Map<String, Integer> dims = new LinkedHashMap<String, Integer>();
-		
-		public Size() {}
+		String[] dims = null;
 		
 		@Override
 		public int getDimensionCount() {
-			return dims.size();
+			return dims.length;
 		}
 
 		@Override
 		public int getIndex(String dim) {
-			return dims.get(dim);
+			int index = -1;
+			for(int i = 0; i < dims.length; i++) {
+				if(dims[i].equals(dim)) {
+					index = i;
+					break;
+				}				
+			}
+			return index;
 		}
 
 		@Override
 		public String getName(int dim) {
-			//http://stackoverflow.com/questions/3478061/does-javas-linkedhashmap-maintain-the-order-of-keys
-			return (String) dims.keySet().toArray()[dim];
+			return dims[dim];
 		}	
+		
+		@Override
+		public String toString() {
+			return Arrays.toString(dims);			
+		}
 	}
 	
 	public static void main(String[] args) {
