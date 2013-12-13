@@ -20,6 +20,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import parser.instances.InstanceFileParser;
 
@@ -31,9 +32,8 @@ public class JSonParser implements InstanceFileParser {
 	   DescriptionSizes descrDims = null;
 	}
 	
-	File file = null;
-	//public static Gson gson = new Gson();
-	Instance instance = null;
+	private File file = null;
+	private Instance instance = null;
 	
 	public static final String ITEMS_KEY = "items";
 	public static final String BINS_KEY = "bins";
@@ -70,11 +70,7 @@ public class JSonParser implements InstanceFileParser {
 	@Override
 	public void parse(boolean displayInstance) {
 		try {
-			/*
-			instance = gson.fromJson(new FileReader(file),  Instance.class);
-			//{"items":[{"name":"MySQL-LB","consume":[{"ram":128}],"arity":2},{"name":"MySQL-backend","consume":[{"ram":512}],"arity":4},{"name":"Keystone-LB","consume":[{"ram":128}],"arity":2},{"name":"Keystone-backend","consume":[{"ram":128}],"arity":3},{"name":"Glance-API-LB","consume":[{"ram":128}],"arity":2},{"name":"Glance-API-backend","consume":[{"ram":128}],"arity":2},{"name":"Glance-Registry-LB","consume":[{"ram":128}],"arity":2},{"name":"Glance-Registry-backend","consume":[{"ram":128}],"arity":2},{"name":"Glance-DB","consume":[],"arity":1},{"name":"Nova-API-LB","consume":[{"ram":128}],"arity":2},{"name":"Nova-API-backend","consume":[{"ram":128}],"arity":2},{"name":"Nova-Scheduler","consume":[{"ram":128}],"arity":2},{"name":"Nova-Conductor","consume":[{"ram":128}],"arity":2},{"name":"Nova-Compute","consume":[{"ram":1024}],"arity":4},{"name":"Nova-DB","consume":[],"arity":1},{"name":"Queue-LB","consume":[{"ram":128}],"arity":2},{"name":"Queue-backend","consume":[{"ram":128}],"arity":3}],"bins":[{"name":"Location_category_1","provide":[{"ram":2048}],"cost":1,"arity":6}]}
-			System.out.print(gson.toJson(instance, Instance.class));
-			*/
+
 			Map<String, Map> mapInstance = (Map<String, Map>) JSONUtils.deSerializeData(file);
 			//System.out.print(JSONUtils.serializeData(map));
 			
@@ -86,7 +82,7 @@ public class JSonParser implements InstanceFileParser {
 			instance.items = new ItemObject[mapItems.size()];
 			instance.bins = new BinObject[mapBins.size()];
 			
-			boolean descrDone = false;
+			//Assume that the descrition sizes found in the first item
 			instance.descrDims = new DescriptionSizes();
 			
 			//System.out.println("Get " + ITEMS_KEY);					
@@ -96,7 +92,7 @@ public class JSonParser implements InstanceFileParser {
 
 				 item.name = (String) mapItem.get(NAME_KEY);
 				 item.arity = ((Long) mapItem.get(ARITY_KEY)).intValue();
-				 List<Map<String, Object> > mapSizes = (List<Map<String, Object> >) mapItem.get(SIZES_KEY);
+				 Map<String, Object> mapSizes = (Map<String, Object>) mapItem.get(SIZES_KEY);
 				 
 				 item.sizes = new int[mapSizes.size()];
 				 
@@ -104,22 +100,35 @@ public class JSonParser implements InstanceFileParser {
 					 instance.descrDims.dims = new String[item.sizes.length];
 				 }
 				 
-				 for(int j = 0; j < item.sizes.length; j++) {
-					 
-					 String key = (String) mapSizes.get(j).keySet().iterator().next();
-					 if(!descrDone) {
+				 //Check other items for description size
+				 if(i != 0 && item.sizes.length != instance.descrDims.dims.length) {
+						throw new Exception("Problem : dimensions of the item " + i + " is incorrect : need exactly " + instance.descrDims.dims.length + " dimension(s)");
+				 }
+				 
+				 
+				 int j = 0;
+				 for(Entry<String, Object> entry : mapSizes.entrySet()) {
+					 String key = entry.getKey();
+
+					 //First Item : get the description size
+					 if(i == 0) {
+						 //The Map garanties unique keys
+						 /*
 						 for(int k = 0; k < j; k++) {
 							if(key.equals(instance.descrDims.dims[k])) {
 								throw new Exception("Problem : 2 dimensions have the same name");
 							}				
 						 }
+						 */
 						 instance.descrDims.dims[j] = key;
 					 }
-					 item.sizes[j] = ((Long) mapSizes.get(j).get(key)).intValue();
+					 
+					 item.sizes[j] = ((Long) entry.getValue()).intValue();
 					 //System.out.println(size.dims);
+					 
+					 j++;
 				 }
 				 
-				 descrDone = true;
 				 instance.items[i] = item;
 			}
 			
@@ -132,32 +141,37 @@ public class JSonParser implements InstanceFileParser {
 				 bin.arity = ((Long) mapBin.get(ARITY_KEY)).intValue();
 				 bin.cost = ((Long) mapBin.get(COST_KEY)).intValue();
 				 
-				 List<Map<String, Object> > mapSizes = (List<Map<String, Object> >) mapBin.get(SIZES_KEY);
+				 Map<String, Object> mapSizes = (Map<String, Object>) mapBin.get(SIZES_KEY);
 				 
 				 bin.sizes = new int[mapSizes.size()];
 				 
-				 for(int j = 0; j < bin.sizes.length; j++) {
-					 
-					 String key = (String) mapSizes.get(j).keySet().iterator().next();
-					 bin.sizes[j] = ((Long) mapSizes.get(j).get(key)).intValue();
-					 //System.out.println(size.dims);
+				 if(bin.sizes.length != instance.descrDims.dims.length) {
+						throw new Exception("Problem : dimensions of the bin " + i + " is incorrect : need exactly " + instance.descrDims.dims.length + " dimension(s)");
+				 }
+				 
+				 int j = 0;
+				 for(Entry<String, Object> entry : mapSizes.entrySet()) {
+					 //String key = entry.getKey();
+					 bin.sizes[j] = ((Long) entry.getValue()).intValue();
+					 //System.out.println(size.dims);					 
+					 j++;
 				 }
 				 
 				 instance.bins[i] = bin;
 			}
 			
-			System.out.println("Print Description Dimensions");					
-			System.out.println(instance.descrDims);
-			
-			System.out.println("Print " + ITEMS_KEY);					
-			System.out.println(Arrays.asList(instance.items));
-
-			System.out.println("Print " + BINS_KEY);					
-			//System.out.println(Arrays.asList(instance.bins));
-			
+			if(displayInstance) {
+				System.out.println("Print Description Dimensions");					
+				System.out.println(instance.descrDims);
+				
+				System.out.println("Print " + ITEMS_KEY);					
+				System.out.println(Arrays.asList(instance.items));
+	
+				System.out.println("Print " + BINS_KEY);					
+				System.out.println(Arrays.asList(instance.bins));
+			}
 			
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -170,7 +184,7 @@ public class JSonParser implements InstanceFileParser {
 
 	class ItemObject implements Item {
 		
-		//{ "name": "MySQL-LB", "consume": [ {"ram", 128} ], "arity": 2 },
+		//{ "name": "MySQL-LB", "sizes": {"ram", 128}, "arity": 2 },
 	    
 		String name = null;
 		int[] sizes = null;
@@ -192,6 +206,11 @@ public class JSonParser implements InstanceFileParser {
 		}
 		
 		@Override
+		public int getDimensionCount() {
+			return sizes.length;
+		}
+		
+		@Override
 		public String toString() {
 			return  "name : " + name + "\n"
 					+ "sizes : " + Arrays.toString(sizes) + "\n"
@@ -203,7 +222,7 @@ public class JSonParser implements InstanceFileParser {
 		 /*
 		{
 		      "name": "Location_category_1",
-		      "provide": [ {"ram", 2048} ],
+		      "sizes": {"ram", 2048},
 		      "cost": 1,
 		      "arity": 6
 		    }
@@ -230,6 +249,11 @@ public class JSonParser implements InstanceFileParser {
 			return cost;
 		}
 		
+		@Override
+		public int getDimensionCount() {
+			return sizes.length;
+		}
+
 		@Override
 		public String toString() {
 			return  "name : " + name + "\n"

@@ -1,0 +1,33 @@
+{
+  "items": [
+    { "name": "MySQL-LB", "sizes": {"cpu": 30, "ram": 128}, "arity": 2 },
+    { "name": "MySQL-backend", "sizes": {"cpu": 25, "ram": 512}, "arity": 4 },
+    { "name": "Keystone-LB", "sizes": {"cpu": 15, "ram": 128}, "arity": 2 },
+    { "name": "Keystone-backend", "sizes": {"cpu": 10, "ram": 128}, "arity": 3 },
+    { "name": "Glance-API-LB", "sizes": {"cpu": 10, "ram": 128}, "arity": 2 },
+    { "name": "Glance-API-backend", "sizes": {"cpu": 10, "ram": 128}, "arity": 2 },
+    { "name": "Glance-Registry-LB", "sizes": {"cpu": 5, "ram": 128}, "arity": 2 },
+    {
+      "name": "Glance-Registry-backend",
+      "sizes": {"cpu": 10, "ram": 128},
+      "arity": 2
+    },
+    { "name": "Glance-DB", "sizes": {"cpu": 5, "ram": 0}, "arity": 1 },
+    { "name": "Nova-API-LB", "sizes": {"cpu": 10, "ram": 128}, "arity": 2 },
+    { "name": "Nova-API-backend", "sizes": {"cpu": 20, "ram": 128}, "arity": 2 },
+    { "name": "Nova-Scheduler", "sizes": {"cpu": 5, "ram": 128}, "arity": 2 },
+    { "name": "Nova-Conductor", "sizes": {"cpu": 10, "ram": 128}, "arity": 2 },
+    { "name": "Nova-Compute", "sizes": {"cpu": 20, "ram": 1024}, "arity": 4 },
+    { "name": "Nova-DB", "sizes": {"cpu": 10, "ram": 0}, "arity": 1 },
+    { "name": "Queue-LB", "sizes": {"cpu": 5, "ram": 128}, "arity": 2 },
+    { "name": "Queue-backend", "sizes": {"cpu": 10, "ram": 128}, "arity": 3 }
+  ],
+  "bins": [
+    {
+      "name": "Location_category_1",
+      "sizes": {"cpu": 100, "ram": 2048},
+      "cost": 1,
+      "arity": 6
+    }
+  ]
+}

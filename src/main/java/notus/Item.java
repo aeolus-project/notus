@@ -19,6 +19,7 @@ package notus;
 public interface Item {
 	
 	String getName();
+	int getDimensionCount();
 	int getSize(int dim);
 	int getArity();
 	
