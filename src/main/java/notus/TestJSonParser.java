@@ -6,6 +6,7 @@ import java.io.File;
 import java.util.Arrays;
 
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -25,7 +26,12 @@ public class TestJSonParser {
 		
 		System.out.println("Parse Instance");
 		
-		parser.parse(displayInstance);
+		try {
+		
+			parser.parse(displayInstance);
+		} catch(Exception e) {
+			Assert.fail(e.getMessage());			
+		}
 		
 		System.out.println("Check Dimensions = " + Arrays.toString(dimensions));
 		

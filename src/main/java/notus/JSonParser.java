@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import parser.absconparseur.tools.UnsupportedConstraintException;
 import parser.instances.InstanceFileParser;
 
 public class JSonParser implements InstanceFileParser {
@@ -68,128 +69,131 @@ public class JSonParser implements InstanceFileParser {
 	}
 
 	@Override
-	public void parse(boolean displayInstance) {
+	public void parse(boolean displayInstance)  throws UnsupportedConstraintException {
+
+		Map<String, Map> mapInstance = null;
 		try {
-
-			Map<String, Map> mapInstance = (Map<String, Map>) JSONUtils.deSerializeData(file);
+			mapInstance = (Map<String, Map>) JSONUtils.deSerializeData(file);
+		
 			//System.out.print(JSONUtils.serializeData(map));
-			
-			instance = new Instance();
-			
-			List<Map<String, Object>> mapItems = (List<Map<String, Object>>) mapInstance.get(ITEMS_KEY);
-			List<Map<String, Object>> mapBins = (List<Map<String, Object>>) mapInstance.get(BINS_KEY);
-			
-			instance.items = new ItemObject[mapItems.size()];
-			instance.bins = new BinObject[mapBins.size()];
-			
-			//Assume that the descrition sizes found in the first item
-			instance.descrDims = new DescriptionSizes();
-			
-			//System.out.println("Get " + ITEMS_KEY);					
-			for(int i = 0; i < instance.items.length; i++) {
-				 ItemObject item = new ItemObject();
-				 Map<String, Object> mapItem = (Map<String, Object>) mapItems.get(i);
-
-				 item.name = (String) mapItem.get(NAME_KEY);
-				 item.arity = ((Long) mapItem.get(ARITY_KEY)).intValue();
-				 Map<String, Object> mapSizes = (Map<String, Object>) mapItem.get(SIZES_KEY);
-				 
-				 item.sizes = new int[mapSizes.size()];
-				 
-				 if(instance.descrDims.dims == null) {
-					 instance.descrDims.dims = new String[item.sizes.length];
-				 }
-				 
-				 //Check other items for description size
-				 if(i != 0 && item.sizes.length != instance.descrDims.dims.length) {
-						throw new Exception("Problem : dimensions of the item " + i + " is incorrect : need exactly " + instance.descrDims.dims.length + " dimension(s)");
-				 }
-				 
-				 
-				 int j = 0;
-				 for(Entry<String, Object> entry : mapSizes.entrySet()) {
-					 String key = entry.getKey();
-
-					 //First Item : get the description size
-					 if(i == 0) {
-						 //The Map garanties unique keys
-						 /*
-						 for(int k = 0; k < j; k++) {
-							if(key.equals(instance.descrDims.dims[k])) {
-								throw new Exception("Problem : 2 dimensions have the same name");
-							}				
-						 }
-						 */
-						 instance.descrDims.dims[j] = key;
-					 } else {
-						 if(!key.equals(instance.descrDims.dims[j])) {
-							 throw new Exception("Problem : size item " + key + " does not equals of " + instance.descrDims.dims[j]);
-						 }
-						 
-					 }
-					 
-					 item.sizes[j] = ((Long) entry.getValue()).intValue();
-					 //System.out.println(size.dims);
-					 
-					 j++;
-				 }
-				 
-				 instance.items[i] = item;
-			}
-			
-			//System.out.println("Get " + BINS_KEY);					
-			for(int i = 0; i < instance.bins.length; i++) {
-				 BinObject bin = new BinObject();
-				 Map<String, Object> mapBin = (Map<String, Object>) mapBins.get(i);
-
-				 bin.name = (String) mapBin.get(NAME_KEY);
-				 bin.arity = ((Long) mapBin.get(ARITY_KEY)).intValue();
-				 bin.cost = ((Long) mapBin.get(COST_KEY)).intValue();
-				 
-				 Map<String, Object> mapSizes = (Map<String, Object>) mapBin.get(SIZES_KEY);
-				 
-				 bin.sizes = new int[mapSizes.size()];
-				 
-				 if(bin.sizes.length != instance.descrDims.dims.length) {
-						throw new Exception("Problem : dimensions of the bin " + i + " is incorrect : need exactly " + instance.descrDims.dims.length + " dimension(s)");
-				 }
-				 
-				 int j = 0;
-				 for(Entry<String, Object> entry : mapSizes.entrySet()) {
-					 String key = entry.getKey();
-					 int sizeBin = ((Long) entry.getValue()).intValue();
-					 
-					 if(!key.equals(instance.descrDims.dims[j])) {
-						 throw new Exception("Problem : size bin " + key + " does not equals of " + instance.descrDims.dims[j]);
-					 }
-					 
-					 //sizeBin != 0
-					 if(sizeBin == 0) {
-						 throw new Exception("Problem : size bin " + key + " is incorrect : different of zero");
-					 }
-					 
-					 bin.sizes[j] = sizeBin;
-					 //System.out.println(size.dims);					 
-					 j++;
-				 }
-				 
-				 instance.bins[i] = bin;
-			}
-			
-			if(displayInstance) {
-				System.out.println("Print Description Dimensions");					
-				System.out.println(instance.descrDims);
-				
-				System.out.println("Print " + ITEMS_KEY);					
-				System.out.println(Arrays.asList(instance.items));
-	
-				System.out.println("Print " + BINS_KEY);					
-				System.out.println(Arrays.asList(instance.bins));
-			}
-			
-		} catch (Exception e) {
-			e.printStackTrace();
+		} catch(Exception e) {
+			throw new UnsupportedConstraintException("Problem : deserialize JSON  file " + file.getName());				
 		}
+		
+		instance = new Instance();
+		
+		List<Map<String, Object>> mapItems = (List<Map<String, Object>>) mapInstance.get(ITEMS_KEY);
+		List<Map<String, Object>> mapBins = (List<Map<String, Object>>) mapInstance.get(BINS_KEY);
+		
+		instance.items = new ItemObject[mapItems.size()];
+		instance.bins = new BinObject[mapBins.size()];
+		
+		//Assume that the descrition sizes found in the first item
+		instance.descrDims = new DescriptionSizes();
+		
+		//System.out.println("Get " + ITEMS_KEY);					
+		for(int i = 0; i < instance.items.length; i++) {
+			 ItemObject item = new ItemObject();
+			 Map<String, Object> mapItem = (Map<String, Object>) mapItems.get(i);
+
+			 item.name = (String) mapItem.get(NAME_KEY);
+			 item.arity = ((Long) mapItem.get(ARITY_KEY)).intValue();
+			 Map<String, Object> mapSizes = (Map<String, Object>) mapItem.get(SIZES_KEY);
+			 
+			 item.sizes = new int[mapSizes.size()];
+			 
+			 if(instance.descrDims.dims == null) {
+				 instance.descrDims.dims = new String[item.sizes.length];
+			 }
+			 
+			 //Check other items for description size
+			 if(i != 0 && item.sizes.length != instance.descrDims.dims.length) {
+					throw new UnsupportedConstraintException("Problem : dimensions of the item " + i + " is incorrect : need exactly " + instance.descrDims.dims.length + " dimension(s)");
+			 }
+			 
+			 
+			 int j = 0;
+			 for(Entry<String, Object> entry : mapSizes.entrySet()) {
+				 String key = entry.getKey();
+
+				 //First Item : get the description size
+				 if(i == 0) {
+					 //The Map garanties unique keys
+					 /*
+					 for(int k = 0; k < j; k++) {
+						if(key.equals(instance.descrDims.dims[k])) {
+							throw new Exception("Problem : 2 dimensions have the same name");
+						}				
+					 }
+					 */
+					 instance.descrDims.dims[j] = key;
+				 } else {
+					 if(!key.equals(instance.descrDims.dims[j])) {
+						 throw new UnsupportedConstraintException("Problem : size item " + key + " does not equals of " + instance.descrDims.dims[j]);
+					 }
+					 
+				 }
+				 
+				 item.sizes[j] = ((Long) entry.getValue()).intValue();
+				 //System.out.println(size.dims);
+				 
+				 j++;
+			 }
+			 
+			 instance.items[i] = item;
+		}
+		
+		//System.out.println("Get " + BINS_KEY);					
+		for(int i = 0; i < instance.bins.length; i++) {
+			 BinObject bin = new BinObject();
+			 Map<String, Object> mapBin = (Map<String, Object>) mapBins.get(i);
+
+			 bin.name = (String) mapBin.get(NAME_KEY);
+			 bin.arity = ((Long) mapBin.get(ARITY_KEY)).intValue();
+			 bin.cost = ((Long) mapBin.get(COST_KEY)).intValue();
+			 
+			 Map<String, Object> mapSizes = (Map<String, Object>) mapBin.get(SIZES_KEY);
+			 
+			 bin.sizes = new int[mapSizes.size()];
+			 
+			 if(bin.sizes.length != instance.descrDims.dims.length) {
+					throw new UnsupportedConstraintException("Problem : dimensions of the bin " + i + " is incorrect : need exactly " + instance.descrDims.dims.length + " dimension(s)");
+			 }
+			 
+			 int j = 0;
+			 for(Entry<String, Object> entry : mapSizes.entrySet()) {
+				 String key = entry.getKey();
+				 
+				 if(!key.equals(instance.descrDims.dims[j])) {
+					 throw new UnsupportedConstraintException("Problem : size bin " + key + " does not equals of " + instance.descrDims.dims[j]);
+				 }
+				 
+				 int sizeBin = ((Long) entry.getValue()).intValue();
+				 
+				 //sizeBin != 0
+				 if(sizeBin == 0) {
+					 throw new UnsupportedConstraintException("Problem : size bin " + key + " is incorrect : different of zero");
+				 }
+				 
+				 bin.sizes[j] = sizeBin;
+				 //System.out.println(size.dims);					 
+				 j++;
+			 }
+			 
+			 instance.bins[i] = bin;
+		}
+		
+		if(displayInstance) {
+			System.out.println("Print Description Dimensions");					
+			System.out.println(instance.descrDims);
+			
+			System.out.println("Print " + ITEMS_KEY);					
+			System.out.println(Arrays.asList(instance.items));
+
+			System.out.println("Print " + BINS_KEY);					
+			System.out.println(Arrays.asList(instance.bins));
+		}
+		
 	}
 
 	@Override
@@ -311,7 +315,7 @@ public class JSonParser implements InstanceFileParser {
 		}
 	}
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 		JSonParser json = new JSonParser();
 		json.loadInstance(new File("src/test/resources/veryredundant-highmysqlandnovacompute-wheezy/binpacking.json"));
 		json.parse(true);
