@@ -121,6 +121,11 @@ public class JSonParser implements InstanceFileParser {
 						 }
 						 */
 						 instance.descrDims.dims[j] = key;
+					 } else {
+						 if(!key.equals(instance.descrDims.dims[j])) {
+							 throw new Exception("Problem : size item " + key + " does not equals of " + instance.descrDims.dims[j]);
+						 }
+						 
 					 }
 					 
 					 item.sizes[j] = ((Long) entry.getValue()).intValue();
@@ -151,8 +156,19 @@ public class JSonParser implements InstanceFileParser {
 				 
 				 int j = 0;
 				 for(Entry<String, Object> entry : mapSizes.entrySet()) {
-					 //String key = entry.getKey();
-					 bin.sizes[j] = ((Long) entry.getValue()).intValue();
+					 String key = entry.getKey();
+					 int sizeBin = ((Long) entry.getValue()).intValue();
+					 
+					 if(!key.equals(instance.descrDims.dims[j])) {
+						 throw new Exception("Problem : size bin " + key + " does not equals of " + instance.descrDims.dims[j]);
+					 }
+					 
+					 //sizeBin != 0
+					 if(sizeBin == 0) {
+						 throw new Exception("Problem : size bin " + key + " is incorrect : different of zero");
+					 }
+					 
+					 bin.sizes[j] = sizeBin;
 					 //System.out.println(size.dims);					 
 					 j++;
 				 }
