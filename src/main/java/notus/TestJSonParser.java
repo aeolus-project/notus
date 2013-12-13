@@ -75,6 +75,8 @@ public class TestJSonParser {
 			totalSizeBins[j] = 0;
 			
 			for(int i = 0; i < nbBins; i++) {
+				//Test if sizeBin != 0
+				assertEquals(parser.getBins()[i].getSize(j) != 0, true);
 				totalSizeBins[j] += parser.getBins()[i].getSize(j) * parser.getBins()[i].getArity();
 			}
 			//System.out.println("total bins " + parser.getDimensions().getName(j) + " : " + totalSizeBins[j]);
